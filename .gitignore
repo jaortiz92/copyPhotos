@@ -1,0 +1,12 @@
+File/*
+Data/*
+.ipynb_checkpoints/*
+*.ipynb
+*.xlsx
+*.xls
+*.csv
+*.pyc
+*.db
+*.zip
+*.sqlite3
+envPC/*
