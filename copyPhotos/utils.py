@@ -1,6 +1,8 @@
 import os
 import shutil
 import re
+from typing import List
+from pandas.core.frame import DataFrame
 from .constants import Constants
 
 
@@ -25,7 +27,7 @@ class Utils():
         return data
 
     @classmethod
-    def copy_data(cls, list_files, dir_destination):
+    def copy_data(cls, list_files, dir_destination) -> None:
         '''Copiar archivos en la carpeta indicada
 
         Toma un lista de archivos y las pega en la carpeta indicada
@@ -101,5 +103,53 @@ class Utils():
         df_without_data = data[data['FILES'] == 'No']
         df_without_data.to_excel(
             Constants.DIR_OUT + '/Archivos_sin_encontrar.xlsx',
+            index=False
+        )
+
+    @classmethod
+    def create_folders_by(
+        self, df: DataFrame, gender_column: str, column_to_job: str
+    ) -> None:
+        '''
+        Crear carpetas segun el tipo de filtrado
+        '''
+        main_path: str = Constants.DIR_OUT + '/{}'.format(column_to_job)
+        if not column_to_job in os.listdir(Constants.DIR_OUT):
+            os.mkdir(main_path)
+
+        df = df.copy()
+        df.drop_duplicates(
+            [column_to_job, gender_column],
+            inplace=True,
+            ignore_index=True
+        )
+
+        for i in df.index:
+            dir_column_to_job: str = main_path + \
+                '/{}'.format(df.loc[i, column_to_job])
+            dir_column_to_job_with_gender: str = dir_column_to_job + \
+                '/{}'.format(df.loc[i, gender_column])
+            if not df.loc[i, column_to_job] in os.listdir(main_path):
+                os.mkdir(dir_column_to_job)
+            if not df.loc[i, gender_column] in os.listdir(dir_column_to_job):
+                os.mkdir(dir_column_to_job_with_gender)
+
+    @classmethod
+    def only_copy_data(
+        cls, list_files: List[str], list_destination: List[str]
+    ) -> None:
+        '''Copiar archivos en la carpeta indicada
+        '''
+        
+        for origin, destination in zip(list_files, list_destination):
+            shutil.copy(origin, destination)
+
+    @classmethod
+    def info_to_excel(self, data: DataFrame, filter_by: str):
+        '''
+        Crear excel con la informacion de cada archivo
+        '''
+        data.to_excel(
+            Constants.DIR_OUT + '/Archivos_pegados_de_carpeta_{}.xlsx'.format(filter_by),
             index=False
         )

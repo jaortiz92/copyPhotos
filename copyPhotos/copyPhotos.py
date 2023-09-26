@@ -1,7 +1,11 @@
+from typing import Dict, List, Tuple
 import pandas as pd
 import numpy as np
 import os
 import re
+from pandas.core.frame import DataFrame
+from pandas.core.series import Series
+from re import Match
 from .constants import Constants
 from .utils import Utils
 from .menu import Menu
@@ -9,6 +13,20 @@ from .menu import Menu
 
 class CopyPhotos():
     def __init__(self) -> None:
+        self.select_function_to_use()
+
+    def select_function_to_use(self) -> None:
+        function_selected: int = Menu.init_app()
+        if function_selected == 1:
+            self.extract_from_excel()
+        elif function_selected == 2:
+            self.extract_from_folder()
+
+    def extract_from_excel(self) -> None:
+        '''
+        Inicia el proceso de extraccion desde el archivo de excel
+        '''
+
         self.photos = Utils.list_files(Constants.DIR_DATA)
         self.data = self.generate_data()
         self.data = self.filter_data_to_work(self.data)
@@ -28,16 +46,16 @@ class CopyPhotos():
         df = df[['FECHA', 'CLIENTE', 'PEDIDO #', 'REFERENCIA', 'COLOR', 'LINEA']]
         return df
 
-    def filter_data_to_work(self, df):
+    def filter_data_to_work(self, df) -> DataFrame:
         '''
         Devuelve DataFrame con la informacion que el usuario quiere trabajar
 
         return:
-
+            DataFrame
         '''
         flag = True
         while flag:
-            user_info = Menu().user_info
+            user_info: Dict[str, str] = Menu.filter_search()
             df = df[df['LINEA'] == Constants.LINE]
             df = df[df['FECHA'] >= user_info['date']]
             if user_info['client']:
@@ -87,3 +105,80 @@ class CopyPhotos():
                 pass
             self.data[self.data['CLIENTE'] == client]['FILES'].apply(
                 Utils.copy_data, dir_destination=dir_destination)
+
+    def extract_from_folder(self) -> None:
+        '''
+        Inicia el proceso de extraccion desde el archivo de la carpeta
+        '''
+        files_df: DataFrame = self.generate_table_from_folder()
+        references: DataFrame = self.generate_table_references()
+        files_df = pd.merge(
+            left=files_df,
+            right=references,
+            on='REFERENCIA',
+            how='left'
+        )
+
+        not_marge: DataFrame = files_df[files_df['MARCA'].isna()]
+        if len(not_marge) > 0:
+            print(
+                'Las siguientes referencias no tienen información en la tabla de referencias')
+            print(not_marge['REFERENCIA'])
+            files_df = files_df[~files_df['MARCA'].isna()]
+
+        filter_by: str = Menu.filter_by()
+        Utils.create_folders_by(files_df, 'GENERO', filter_by)
+
+        files_df['RUTA_DESTINO']: Series = files_df[
+            [filter_by, 'GENERO', 'ARCHIVO']
+        ].apply(
+            lambda x: '{}/{}/{}/{}/{}'.format(
+                Constants.DIR_OUT, filter_by,
+                x[0], x[1], x[2]
+            ),
+            axis=1
+        )
+
+        Utils.info_to_excel(files_df, filter_by)
+
+        Utils.only_copy_data(
+            files_df['RUTA_ORIGEN'],
+            files_df['RUTA_DESTINO'],
+        )
+
+
+    def generate_table_from_folder(self) -> DataFrame:
+        '''
+        Devuelve DataFrame con la informacion de todos los archivos en la carpeta indicada
+
+        return:
+            DataFrame
+        '''
+        files: List[str] = os.listdir(Constants.DIR_DATA_FOLDER)
+        values: List[Tuple[str]] = []
+        for file in files:
+            match_file: Match = re.search(r'_*(M?[0-9]+)_([0-9]*[A-Z]*).*', file)
+            if match_file:
+                values.append(
+                    (match_file.group(1), match_file.group(2),
+                     Constants.DIR_DATA_FOLDER + file, file)
+                )
+            else:
+                print('Archivo {} no tiene el formato correcto'.format(file))
+        return pd.DataFrame(
+            values, columns=['REFERENCIA', 'COLOR', 'RUTA_ORIGEN', 'ARCHIVO']
+        )
+
+    def generate_table_references(self) -> DataFrame:
+        '''
+        Devuelve DataFrame con la informacion de todas las referencias
+
+        return:
+            DataFrame
+        '''
+        return pd.read_excel(
+            Constants.REFERENCES_FILE_NAME,
+            dtype={
+                'REFERENCIA': str,
+            }
+        )

@@ -1,6 +1,7 @@
 File/*
 Data/*
 Out/*
+*DataExtract*
 .ipynb_checkpoints/*
 *.ipynb
 *.xlsx
