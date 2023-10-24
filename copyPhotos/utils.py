@@ -45,7 +45,10 @@ class Utils():
             new_name = name + '_' + counter_name + extension
             new_path_file = os.path.join(dir_destination, new_name)
             old_path_file = os.path.join(dir_destination, file_name)
-            os.rename(old_path_file, new_path_file)
+            try:
+                os.rename(old_path_file, new_path_file)
+            except:
+                pass
             counter += 1
 
     @classmethod
@@ -82,10 +85,19 @@ class Utils():
         else:
             regular_expression = '.*{}_.*'.format(x[0])
             regular_expression = re.compile(regular_expression)
+
+        regular_expression_lookbook = '.*ookbook.*{}.*'.format(x[0])
+        regular_expression_lookbook = re.compile(regular_expression_lookbook)
+        regular_expression_conceito = '.*ceito.*{}.*'.format(x[0])
+        regular_expression_conceito = re.compile(regular_expression_conceito)
             
         for file in photos:
-            if regular_expression.match(file):
-                list_join.append(file)
+            if (
+                    regular_expression.match(file) or 
+                    regular_expression_lookbook.match(file) or
+                    regular_expression_conceito.match(file)
+                ):
+                list_join.append(file)                
         if len(list_join) == 0:
             list_join = 'No'
         return list_join

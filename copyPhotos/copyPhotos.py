@@ -102,7 +102,7 @@ class CopyPhotos():
             try:
                 os.mkdir(dir_destination)
             except:
-                pass
+                print('Carpeta ya existe: ', dir_destination)
             self.data[self.data['CLIENTE'] == client]['FILES'].apply(
                 Utils.copy_data, dir_destination=dir_destination)
 
