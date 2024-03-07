@@ -29,7 +29,7 @@ class CopyPhotos():
 
         self.photos = Utils.list_files(Constants.DIR_DATA)
         self.data = self.generate_data()
-        self.data = self.filter_data_to_work(self.data)
+        #self.data = self.filter_data_to_work(self.data)
         self.init_copy()
 
     def generate_data(self):
@@ -40,10 +40,8 @@ class CopyPhotos():
             Vuelve excel en DataFrame, quita nulos y duplicados
         '''
         df = pd.read_excel(Constants.ORDER_FILE_NAME)
-        df = df.dropna(subset=['FECHA'])
         df = df.drop_duplicates(
             ['CLIENTE', 'REFERENCIA', 'COLOR'], ignore_index=True)
-        df = df[['FECHA', 'CLIENTE', 'PEDIDO #', 'REFERENCIA', 'COLOR', 'LINEA']]
         return df
 
     def filter_data_to_work(self, df) -> DataFrame:
