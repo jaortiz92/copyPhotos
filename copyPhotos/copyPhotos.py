@@ -39,7 +39,14 @@ class CopyPhotos():
         return:
             Vuelve excel en DataFrame, quita nulos y duplicados
         '''
-        df = pd.read_excel(Constants.ORDER_FILE_NAME)
+        df = pd.read_excel(
+            Constants.ORDER_FILE_NAME,
+            dtype={
+                'CLIENTE': str,
+                'REFERENCIA': str,
+                'COLOR': str
+            }
+        )
         df = df.drop_duplicates(
             ['CLIENTE', 'REFERENCIA', 'COLOR'], ignore_index=True)
         return df
