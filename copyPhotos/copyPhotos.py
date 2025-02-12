@@ -126,6 +126,7 @@ class CopyPhotos():
             if self.extraction_type:
                 with_name = 1
             else:
+                self.data['NOMBRE'] = np.nan
                 with_name = 0
 
             data_temp = self.data[self.data['CLIENTE'] == client].reset_index(
