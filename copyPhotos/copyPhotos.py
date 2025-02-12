@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import time
 from pandas.core.frame import DataFrame
 from pandas.core.series import Series
 from re import Match
@@ -18,9 +19,11 @@ class CopyPhotos():
     def select_function_to_use(self) -> None:
         function_selected: int = Menu.init_app()
         if function_selected == 1:
+            self.extraction_type: int = Menu.extraction_type()
             self.extract_from_excel()
         elif function_selected == 2:
             self.extract_from_folder()
+        time.sleep(30)
 
     def extract_from_excel(self) -> None:
         '''
@@ -29,10 +32,19 @@ class CopyPhotos():
 
         self.photos = Utils.list_files(Constants.DIR_DATA)
         self.data = self.generate_data()
-        #self.data = self.filter_data_to_work(self.data)
-        self.init_copy()
+        # self.data = self.filter_data_to_work(self.data)
+        if self.extraction_type:
+            if self.data.shape[1] <= 3:
+                print('El Archovo no contiene la columna NOMBRE')
+            elif sum(self.data['NOMBRE'].isna()):
+                print('La columna NOMBRE tiene valores nulos')
+            else:
+                self.data['NOMBRE'] = self.data['NOMBRE'].str.strip()
+                self.init_copy()
+        else:
+            self.init_copy()
 
-    def generate_data(self):
+    def generate_data(self) -> DataFrame:
         '''
         Devuelve archivo con la data limpia para trabajar
 
@@ -44,12 +56,14 @@ class CopyPhotos():
             dtype={
                 'CLIENTE': str,
                 'REFERENCIA': str,
-                'COLOR': str
+                'COLOR': str,
+                'NOMBRE': str
             }
         )
+
         df = df.drop_duplicates(
             ['CLIENTE', 'REFERENCIA', 'COLOR'], ignore_index=True)
-        return df
+        return df.dropna(subset=['CLIENTE', 'REFERENCIA'])
 
     def filter_data_to_work(self, df) -> DataFrame:
         '''
@@ -108,8 +122,36 @@ class CopyPhotos():
                 os.mkdir(dir_destination)
             except:
                 print('Carpeta ya existe: ', dir_destination)
-            self.data[self.data['CLIENTE'] == client]['FILES'].apply(
-                Utils.copy_data, dir_destination=dir_destination)
+
+            if self.extraction_type:
+                with_name = 1
+            else:
+                with_name = 0
+
+            data_temp = self.data[self.data['CLIENTE'] == client].reset_index(
+                drop=True
+            )
+
+            data_temp['NOMBRE_FOTOS'] = data_temp[
+                ['FILES', 'NOMBRE']
+            ].apply(
+                Utils.copy_data,
+                dir_destination=dir_destination,
+                with_name=with_name,
+                axis=1
+            )
+
+            if self.extraction_type:
+                df = pd.DataFrame(columns=data_temp.columns)
+                for index in data_temp.index:
+                    for file in data_temp.loc[index, 'NOMBRE_FOTOS']:
+                        temp = data_temp.loc[[index], :]
+                        temp['NOMBRE_FOTOS'] = file
+                        df = pd.concat(
+                            [df, temp],
+                            ignore_index=True
+                        )
+                Utils.save_table(df, client)
 
     def extract_from_folder(self) -> None:
         '''
@@ -134,7 +176,7 @@ class CopyPhotos():
         filter_by: str = Menu.filter_by()
         Utils.create_folders_by(files_df, 'GENERO', filter_by)
 
-        files_df['RUTA_DESTINO']: Series = files_df[
+        files_df['RUTA_DESTINO'] = files_df[
             [filter_by, 'GENERO', 'ARCHIVO']
         ].apply(
             lambda x: '{}/{}/{}/{}/{}'.format(
@@ -151,7 +193,6 @@ class CopyPhotos():
             files_df['RUTA_DESTINO'],
         )
 
-
     def generate_table_from_folder(self) -> DataFrame:
         '''
         Devuelve DataFrame con la informacion de todos los archivos en la carpeta indicada
@@ -162,7 +203,8 @@ class CopyPhotos():
         files: List[str] = os.listdir(Constants.DIR_DATA_FOLDER)
         values: List[Tuple[str]] = []
         for file in files:
-            match_file: Match = re.search(r'_*(M?[0-9]+)_([0-9]*[A-Z]*).*', file)
+            match_file: Match = re.search(
+                r'_*(M?[0-9]+)_([0-9]*[A-Z]*).*', file)
             if match_file:
                 values.append(
                     (match_file.group(1), match_file.group(2),

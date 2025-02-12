@@ -27,7 +27,7 @@ class Utils():
         return data
 
     @classmethod
-    def copy_data(cls, list_files, dir_destination) -> None:
+    def copy_data(cls, x, dir_destination, with_name=0) -> None:
         '''Copiar archivos en la carpeta indicada
 
         Toma un lista de archivos y las pega en la carpeta indicada
@@ -37,19 +37,25 @@ class Utils():
         dir_destination -> Ruta donde se pegaran los archivos
         '''
         counter = 0
-        for origin in list_files:
+        names = []
+        for origin in x[0]:
             shutil.copy(origin, dir_destination)
             file_name = os.path.basename(origin)
             name, extension = os.path.splitext(file_name)
-            counter_name = '0' + str(counter) if len(str(counter)) == 1 else str(counter)
-            new_name = name + '_' + counter_name + extension
+            counter_name = '0' + \
+                str(counter) if len(str(counter)) == 1 else str(counter)
+            if with_name:
+                name = x[1] + '_' + name
+                new_name = name + '_' + counter_name + extension
             new_path_file = os.path.join(dir_destination, new_name)
             old_path_file = os.path.join(dir_destination, file_name)
+            names.append(new_name)
             try:
                 os.rename(old_path_file, new_path_file)
             except:
                 pass
             counter += 1
+        return names
 
     @classmethod
     def pack_dirs(cls):
@@ -90,14 +96,14 @@ class Utils():
         regular_expression_lookbook = re.compile(regular_expression_lookbook)
         regular_expression_conceito = '.*ceito.*{}.*'.format(x[0])
         regular_expression_conceito = re.compile(regular_expression_conceito)
-            
+
         for file in photos:
             if (
-                    regular_expression.match(file) or 
-                    regular_expression_lookbook.match(file) or
-                    regular_expression_conceito.match(file)
-                ):
-                list_join.append(file)                
+                regular_expression.match(file) or
+                regular_expression_lookbook.match(file) or
+                regular_expression_conceito.match(file)
+            ):
+                list_join.append(file)
         if len(list_join) == 0:
             list_join = 'No'
         return list_join
@@ -115,6 +121,22 @@ class Utils():
         df_without_data = data[data['FILES'] == 'No']
         df_without_data.to_excel(
             Constants.DIR_OUT + '/Archivos_sin_encontrar.xlsx',
+            index=False
+        )
+
+    @classmethod
+    def save_table(self, data, name):
+        '''
+        Crear excel con la informacion que se copio
+
+        Toma los que tiene nombre de archivo y lo guarda en un excel
+
+        Parametros:
+        df -> DataFrame con la data que tiene la lista de los nombres de los archivos
+        name -> Nombre para guardar el archivo
+        '''
+        data.to_excel(
+            Constants.DIR_OUT + '/' + name + '.xlsx',
             index=False
         )
 
@@ -152,7 +174,7 @@ class Utils():
     ) -> None:
         '''Copiar archivos en la carpeta indicada
         '''
-        
+
         for origin, destination in zip(list_files, list_destination):
             shutil.copy(origin, destination)
 
@@ -162,6 +184,7 @@ class Utils():
         Crear excel con la informacion de cada archivo
         '''
         data.to_excel(
-            Constants.DIR_OUT + '/Archivos_pegados_de_carpeta_{}.xlsx'.format(filter_by),
+            Constants.DIR_OUT +
+            '/Archivos_pegados_de_carpeta_{}.xlsx'.format(filter_by),
             index=False
         )

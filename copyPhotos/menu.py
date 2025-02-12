@@ -21,6 +21,23 @@ class Menu():
         return function_selected
 
     @classmethod
+    def extraction_type(cls) -> int:
+        flag = True
+        while flag:
+            selected: str = input(
+                '¿Que tipo de extracción?\n\t1. Normal\n\t2. Para Ecommerce\n')
+            if selected == '1':
+                function_selected: int = 0
+                flag = False
+            elif selected == '2':
+                function_selected: int = 1
+                flag = False
+            else:
+                print('Valor ingresado no valido')
+
+        return function_selected
+
+    @classmethod
     def filter_search(cls) -> Dict[str, str]:
         '''
         Preguntar al usuario desde que fecha quiere trabajar el reporte, y tambien si quiere un solo cliente o todos
@@ -51,7 +68,6 @@ class Menu():
             'client': cls.client
         }
 
-
     @classmethod
     def filter_by(cls) -> str:
         flag = True
@@ -68,5 +84,3 @@ class Menu():
                 print('Valor ingresado no valido')
 
         return function_selected
-    
-    
