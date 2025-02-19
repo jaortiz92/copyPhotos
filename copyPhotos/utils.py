@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+from PIL import Image
 from typing import List
 from pandas.core.frame import DataFrame
 from .constants import Constants
@@ -46,10 +47,14 @@ class Utils():
                 str(counter) if len(str(counter)) == 1 else str(counter)
             if with_name:
                 name = x[1] + '_' + name
+                width, height = Image.open(origin).size
+            else:
+                width, height = (0, 0)
+
             new_name = name + '_' + counter_name + extension
             new_path_file = os.path.join(dir_destination, new_name)
             old_path_file = os.path.join(dir_destination, file_name)
-            names.append(new_name)
+            names.append((new_name, width, height))
             try:
                 os.rename(old_path_file, new_path_file)
             except:

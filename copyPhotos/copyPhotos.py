@@ -35,7 +35,7 @@ class CopyPhotos():
         # self.data = self.filter_data_to_work(self.data)
         if self.extraction_type:
             if self.data.shape[1] <= 3:
-                print('El Archovo no contiene la columna NOMBRE')
+                print('El Archivo no contiene la columna NOMBRE')
             elif sum(self.data['NOMBRE'].isna()):
                 print('La columna NOMBRE tiene valores nulos')
             else:
@@ -105,7 +105,7 @@ class CopyPhotos():
 
     def create_dirs_and_copy_data(self):
         '''
-        Crear directorios y pagar archivos
+        Crear directorios y pegar archivos
 
         Crear el directorio con el nombre del cliente y copia los archivos que tienen nombre en FILE
 
@@ -147,7 +147,7 @@ class CopyPhotos():
                 for index in data_temp.index:
                     for file in data_temp.loc[index, 'NOMBRE_FOTOS']:
                         temp = data_temp.loc[[index], :]
-                        temp['NOMBRE_FOTOS'] = file
+                        temp[['NOMBRE_FOTOS', 'ANCHO', 'LARGO']] = file
                         df = pd.concat(
                             [df, temp],
                             ignore_index=True
